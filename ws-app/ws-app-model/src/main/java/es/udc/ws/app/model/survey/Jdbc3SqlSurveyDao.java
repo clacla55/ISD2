@@ -19,7 +19,7 @@ public class Jdbc3SqlSurveyDao extends AbstractSqlSurveyDao {
         try (PreparedStatement preparedStatement = connection.prepareStatement(
                 queryString, Statement.RETURN_GENERATED_KEYS)) {
 
-            // Impostare i parametri
+            // Establecer los parámetros
             preparedStatement.setString(1, survey.getQuestion());
             preparedStatement.setTimestamp(2, Timestamp.valueOf(survey.getCreationDate()));
             preparedStatement.setTimestamp(3, Timestamp.valueOf(survey.getEndDate()));
@@ -27,10 +27,10 @@ public class Jdbc3SqlSurveyDao extends AbstractSqlSurveyDao {
             preparedStatement.setLong(5, survey.getPositiveResponses());
             preparedStatement.setLong(6, survey.getNegativeResponses());
 
-            // Eseguire l'inserimento
+            // Realizar la inserción
             preparedStatement.executeUpdate();
 
-            // Ottenere l'ID generato
+            // Obtener el ID generado
             ResultSet resultSet = preparedStatement.getGeneratedKeys();
 
             if (!resultSet.next()) {
@@ -38,7 +38,7 @@ public class Jdbc3SqlSurveyDao extends AbstractSqlSurveyDao {
             }
             Long surveyId = resultSet.getLong(1);
 
-            // Aggiornare l'oggetto survey con l'ID e ritornarlo
+            // Actualiza el objeto de encuesta con el ID y devuélvelo.
             survey.setSurveyId(surveyId);
             return survey;
 
@@ -49,19 +49,19 @@ public class Jdbc3SqlSurveyDao extends AbstractSqlSurveyDao {
 
     @Override
     public void update(Connection connection, Survey survey) throws InstanceNotFoundException {
-        // Non richiesto per FUNC-1
+        // No es necesario para FUNC-1
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public Survey find(Connection connection, Long surveyId) throws InstanceNotFoundException {
-        // Non richiesto per FUNC-1 (ma lo sarà per FUNC-3)
+        // No es necesario para FUNC-1
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public List<Survey> findByKeyword(Connection connection, String keyword, boolean onlyFuture) {
-        // Non richiesto per FUNC-1
+        // No es necesario para FUNC-1
         throw new UnsupportedOperationException("Not implemented yet");
     }
 

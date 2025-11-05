@@ -24,12 +24,12 @@ public class SurveyServiceImpl implements SurveyService {
 
     private final DataSource dataSource;
     private final SqlSurveyDao surveyDao;
-    // private final SqlResponseDao responseDao; // Non necessario per FUNC-1
+    // private final SqlResponseDao responseDao; // No es necesario para FUNC-1
 
     private SurveyServiceImpl() {
         dataSource = DataSourceLocator.getDataSource(ModelConstants.APP_DATA_SOURCE);
         surveyDao = SqlSurveyDaoFactory.getDao();
-        // responseDao = SqlResponseDaoFactory.getDao(); // Non necessario per FUNC-1
+        // responseDao = SqlResponseDaoFactory.getDao(); // No es necesario para FUNC-1
     }
 
     public synchronized static SurveyService getInstance() {
@@ -54,24 +54,24 @@ public class SurveyServiceImpl implements SurveyService {
     public Survey createSurvey(String question, LocalDateTime endDate)
             throws InputValidationException {
 
-        // Validazione
+        // Validacion
         validateCreateSurvey(question, endDate);
 
-        // Creazione dell'oggetto
+        // Creacion del objeto
         Survey survey = new Survey(question, endDate);
-        survey.setCreationDate(LocalDateTime.now()); // Impostiamo la data di creazione [cite: 29]
+        survey.setCreationDate(LocalDateTime.now()); // Establecer la fecha de creación
 
-        // Logica di persistenza
+        // Lojica de persistencia
         try (Connection connection = dataSource.getConnection()) {
 
             try {
-                // Inizio transazione
+                // Inicio transaccion
                 connection.setAutoCommit(false);
 
-                // Persistenza
+                // Persistencia
                 Survey createdSurvey = surveyDao.create(connection, survey);
 
-                // Fine transazione
+                // Fin transaccion
                 connection.commit();
 
                 return createdSurvey;

@@ -1,4 +1,5 @@
 package es.udc.ws.app.test.model.appservice;
+
 import es.udc.ws.app.model.util.ModelConstants;
 import es.udc.ws.app.model.survey.SqlSurveyDao;
 import es.udc.ws.app.model.survey.SqlSurveyDaoFactory;
@@ -28,36 +29,34 @@ public class AppServiceTest {
     @BeforeAll
     public static void init() {
 
-        // Creiamo e registriamo il DataSource per i test
-        // Questo risolve l'errore NoInitialContextException
+        // Creamos y registramos el DataSource para las pruebas
         dataSource = new SimpleDataSource();
         DataSourceLocator.addDataSource(ModelConstants.APP_DATA_SOURCE, dataSource);
 
-        // Otteniamo le istanze del servizio e del DAO
+        // Obtenemos las instancias del servicio y del DAO
         surveyService = SurveyServiceImpl.getInstance();
         surveyDao = SqlSurveyDaoFactory.getDao();
     }
 
-    // Metodo helper per pulire il DB (necessario per i test)
+    // Método auxiliar para limpiar la BD (necesario para las pruebas)
     private void removeSurvey(Long surveyId) {
         if (surveyId == null) {
             return;
         }
         try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(true); // Usare autocommit per le operazioni di pulizia
+            connection.setAutoCommit(true); // Usar autocommit para las operaciones de limpieza
             surveyDao.remove(connection, surveyId);
         } catch (InstanceNotFoundException e) {
-            // Ignoriamo se è già stato cancellato
+            // Ignoramos si ya ha sido eliminado
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
-     * [FUNC-1] Test per il caso di successo.
-     * Verifica che l'indagine venga creata correttamente nel DB,
-     * che tutti i campi siano inizializzati e che venga restituito
-     * un ID valido.
+     * [FUNC-1] Prueba de éxito.
+     * Verifica que la encuesta se haya creado correctamente en la base de datos,
+     * que todos los campos estén inicializados y que se devuelva un ID válido.
      */
     @Test
     public void testCreateSurvey() throws InputValidationException {
@@ -67,25 +66,25 @@ public class AppServiceTest {
         Survey createdSurvey = null;
 
         try {
-            // 1. Creare l'indagine
+            // 1. Crear la encuesta
             createdSurvey = surveyService.createSurvey(question, endDate);
 
-            // 2. Verifiche sull'oggetto restituito
-            assertNotNull(createdSurvey.getSurveyId(), "SurveyId non deve essere nullo");
+            // 2. Verificaciones sobre el objeto devuelto
+            assertNotNull(createdSurvey.getSurveyId(), "SurveyId no debe ser nulo");
             assertEquals(question, createdSurvey.getQuestion());
             assertEquals(endDate, createdSurvey.getEndDate());
-            assertNotNull(createdSurvey.getCreationDate(), "CreationDate non deve essere nulla");
-            assertFalse(createdSurvey.isCanceled(), "Non deve essere cancellata");
-            assertEquals(0, createdSurvey.getPositiveResponses(), "Contatore positivo deve essere 0");
-            assertEquals(0, createdSurvey.getNegativeResponses(), "Contatore negativo deve essere 0");
+            assertNotNull(createdSurvey.getCreationDate(), "CreationDate no debe ser nula");
+            assertFalse(createdSurvey.isCanceled(), "No debe estar cancelada");
+            assertEquals(0, createdSurvey.getPositiveResponses(), "Contador positivo debe ser 0");
+            assertEquals(0, createdSurvey.getNegativeResponses(), "Contador negativo debe ser 0");
 
-            // 3. Verifiche sul DB (opzionale, ma buona pratica)
-            // Se avessimo implementato surveyDao.find(), potremmo usarlo qui.
-            // Per ora, confidiamo che se createSurvey non ha lanciato eccezioni
-            // e ha restituito un ID, l'inserimento è andato a buon fine.
+            // 3. Verificaciones en la BD (opcional, pero buena práctica)
+            // Si hubiéramos implementado surveyDao.find(), podríamos usarlo aquí.
+            // Por ahora, confiamos en que si createSurvey no ha lanzado excepciones
+            // y ha devuelto un ID, la inserción ha ido bien.
 
         } finally {
-            // 4. Pulizia
+            // 4. Limpieza
             if (createdSurvey != null) {
                 removeSurvey(createdSurvey.getSurveyId());
             }
@@ -93,8 +92,8 @@ public class AppServiceTest {
     }
 
     /**
-     * [FUNC-1] Test per il caso di errore: domanda nulla.
-     * Verifica che venga lanciata InputValidationException.
+     * [FUNC-1] Prueba para el caso de error: pregunta nula.
+     * Verifica que se lance InputValidationException.
      */
     @Test
     public void testCreateSurveyNullQuestion() {
@@ -103,16 +102,16 @@ public class AppServiceTest {
 
         assertThrows(InputValidationException.class, () -> {
             surveyService.createSurvey(null, endDate);
-        }, "Non si possono creare indagini con domanda nulla");
+        }, "No se pueden crear encuestas con pregunta nula");
 
         assertThrows(InputValidationException.class, () -> {
-            surveyService.createSurvey("   ", endDate); // Anche domanda vuota
-        }, "Non si possono creare indagini con domanda vuota");
+            surveyService.createSurvey("   ", endDate); // También pregunta vacía
+        }, "No se pueden crear encuestas con pregunta vacía");
     }
 
     /**
-     * [FUNC-1] Test per il caso di errore: data di fine passata.
-     * Verifica che venga lanciata InputValidationException[cite: 28].
+     * [FUNC-1] Prueba para el caso de error: fecha de finalización pasada.
+     * Verifica que se lance InputValidationException.
      */
     @Test
     public void testCreateSurveyPastEndDate() {
@@ -122,7 +121,7 @@ public class AppServiceTest {
 
         assertThrows(InputValidationException.class, () -> {
             surveyService.createSurvey(question, pastEndDate);
-        }, "La data di fine deve essere futura");
+        }, "La fecha de fin debe ser futura");
     }
 
 }

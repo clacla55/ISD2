@@ -1,8 +1,8 @@
 package es.udc.ws.app.model.survey;
 
 /**
- * Implementazione astratta di {@link SqlSurveyDao} che include funzionalità
- * comuni.
+ * Implementación abstracta de {@link SqlSurveyDao} que incluye características comunes
+ * características.
  */
 public abstract class AbstractSqlSurveyDao implements SqlSurveyDao {
 
