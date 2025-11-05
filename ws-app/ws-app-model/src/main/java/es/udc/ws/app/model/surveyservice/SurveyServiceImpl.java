@@ -55,7 +55,8 @@ public class SurveyServiceImpl implements SurveyService {
         validateCreateSurvey(question, endDate);
 
         Survey survey = new Survey(question, endDate);
-        survey.setCreationDate(LocalDateTime.now().withNano(0)); // Ignoramos nanosegundos para compatibilidad con BD
+        // Ignoramos nanosegundos para compatibilidad con BD MySQL y evitar errores en tests
+        survey.setCreationDate(LocalDateTime.now().withNano(0));
 
         try (Connection connection = dataSource.getConnection()) {
 
@@ -80,12 +81,16 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     public List<Survey> findSurveys(String keyword, boolean onlyFuture) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        // [FUNC-2] Buscar encuestas delegando en el DAO
+        try (Connection connection = dataSource.getConnection()) {
+            return surveyDao.findByKeyword(connection, keyword, onlyFuture);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Survey findSurvey(Long surveyId) throws InstanceNotFoundException {
-        // [FUNC-3] Implementación de buscar encuesta por ID
         try (Connection connection = dataSource.getConnection()) {
             return surveyDao.find(connection, surveyId);
         } catch (SQLException e) {

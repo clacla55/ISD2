@@ -4,6 +4,7 @@ import es.udc.ws.util.exceptions.InstanceNotFoundException;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Jdbc3SqlSurveyDao extends AbstractSqlSurveyDao {
@@ -49,14 +50,13 @@ public class Jdbc3SqlSurveyDao extends AbstractSqlSurveyDao {
 
     @Override
     public void update(Connection connection, Survey survey) throws InstanceNotFoundException {
-        // No es necesario para FUNC-1 ni FUNC-3
+        // No es necesario para FUNC-1, FUNC-2 ni FUNC-3
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public Survey find(Connection connection, Long surveyId) throws InstanceNotFoundException {
 
-        // [FUNC-3] Consulta para recuperar una encuesta por su ID
         String queryString = "SELECT question, creationDate, endDate, canceled, "
                 + "positiveResponses, negativeResponses FROM Survey WHERE surveyId = ?";
 
@@ -93,8 +93,61 @@ public class Jdbc3SqlSurveyDao extends AbstractSqlSurveyDao {
 
     @Override
     public List<Survey> findByKeyword(Connection connection, String keyword, boolean onlyFuture) {
-        // No es necesario para FUNC-1 ni FUNC-3
-        throw new UnsupportedOperationException("Not implemented yet");
+
+        // [FUNC-2] Búsqueda de encuestas por palabra clave y/o fecha futura
+        String queryString = "SELECT surveyId, question, creationDate, endDate, canceled, "
+                + "positiveResponses, negativeResponses FROM Survey";
+
+        // Determinar si hay palabra clave para filtrar
+        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+
+        // Construir la cláusula WHERE dinámicamente
+        if (hasKeyword) {
+            queryString += " WHERE LOWER(question) LIKE LOWER(?)";
+        }
+
+        if (onlyFuture) {
+            queryString += (hasKeyword ? " AND" : " WHERE") + " endDate > ?";
+        }
+
+        // Ordenar por fecha de creación descendente (las más recientes primero)
+        queryString += " ORDER BY creationDate DESC";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(queryString)) {
+
+            int i = 1;
+            if (hasKeyword) {
+                // Usar % para búsqueda parcial
+                preparedStatement.setString(i++, "%" + keyword + "%");
+            }
+            if (onlyFuture) {
+                // Filtrar encuestas cuya fecha de fin sea posterior a ahora
+                preparedStatement.setTimestamp(i++, Timestamp.valueOf(LocalDateTime.now()));
+            }
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            List<Survey> surveys = new ArrayList<>();
+
+            while (resultSet.next()) {
+                Long surveyId = resultSet.getLong(1);
+                String question = resultSet.getString(2);
+                Timestamp creationDateAsTimestamp = resultSet.getTimestamp(3);
+                LocalDateTime creationDate = creationDateAsTimestamp.toLocalDateTime();
+                Timestamp endDateAsTimestamp = resultSet.getTimestamp(4);
+                LocalDateTime endDate = endDateAsTimestamp.toLocalDateTime();
+                boolean canceled = resultSet.getBoolean(5);
+                long positiveResponses = resultSet.getLong(6);
+                long negativeResponses = resultSet.getLong(7);
+
+                surveys.add(new Survey(surveyId, question, creationDate, endDate, canceled,
+                        positiveResponses, negativeResponses));
+            }
+
+            return surveys;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
