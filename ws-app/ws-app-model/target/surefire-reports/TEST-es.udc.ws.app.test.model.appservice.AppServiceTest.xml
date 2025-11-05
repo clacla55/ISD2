@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.063" tests="1" errors="1" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.28" tests="3" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -64,20 +64,7 @@
     <property name="library.jansi.path" value="C:\software\apache-maven-3.9.11\lib\jansi-native"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.063">
-    <error message="javax.naming.NoInitialContextException: Need to specify class name in environment or system property, or in an application resource file: java.naming.factory.initial" type="java.lang.RuntimeException"><![CDATA[java.lang.RuntimeException: javax.naming.NoInitialContextException: Need to specify class name in environment or system property, or in an application resource file: java.naming.factory.initial
-	at es.udc.ws.util.sql.DataSourceLocator.getDataSource(DataSourceLocator.java:61)
-	at es.udc.ws.app.model.surveyservice.SurveyServiceImpl.<init>(SurveyServiceImpl.java:26)
-	at es.udc.ws.app.test.model.appservice.AppServiceTest.init(AppServiceTest.java:44)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-Caused by: javax.naming.NoInitialContextException: Need to specify class name in environment or system property, or in an application resource file: java.naming.factory.initial
-	at java.naming/javax.naming.spi.NamingManager.getInitialContext(NamingManager.java:492)
-	at java.naming/javax.naming.InitialContext.getDefaultInitCtx(InitialContext.java:305)
-	at java.naming/javax.naming.InitialContext.getURLOrDefaultInitCtx(InitialContext.java:342)
-	at java.naming/javax.naming.InitialContext.lookup(InitialContext.java:409)
-	at es.udc.ws.util.sql.DataSourceLocator.getDataSource(DataSourceLocator.java:57)
-	... 4 more
-]]></error>
-  </testcase>
+  <testcase name="testCreateSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.24"/>
+  <testcase name="testCreateSurveyPastEndDate" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.0"/>
+  <testcase name="testCreateSurveyNullQuestion" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.0"/>
 </testsuite>
