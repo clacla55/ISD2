@@ -24,12 +24,10 @@ public class SurveyServiceImpl implements SurveyService {
 
     private final DataSource dataSource;
     private final SqlSurveyDao surveyDao;
-    // private final SqlResponseDao responseDao; // No es necesario para FUNC-1
 
     private SurveyServiceImpl() {
         dataSource = DataSourceLocator.getDataSource(ModelConstants.APP_DATA_SOURCE);
         surveyDao = SqlSurveyDaoFactory.getDao();
-        // responseDao = SqlResponseDaoFactory.getDao(); // No es necesario para FUNC-1
     }
 
     public synchronized static SurveyService getInstance() {
@@ -54,32 +52,23 @@ public class SurveyServiceImpl implements SurveyService {
     public Survey createSurvey(String question, LocalDateTime endDate)
             throws InputValidationException {
 
-        // Validacion
         validateCreateSurvey(question, endDate);
 
-        // Creacion del objeto
         Survey survey = new Survey(question, endDate);
-        survey.setCreationDate(LocalDateTime.now()); // Establecer la fecha de creación
+        survey.setCreationDate(LocalDateTime.now().withNano(0)); // Ignoramos nanosegundos para compatibilidad con BD
 
-        // Lojica de persistencia
         try (Connection connection = dataSource.getConnection()) {
 
             try {
-                // Inicio transaccion
                 connection.setAutoCommit(false);
-
-                // Persistencia
                 Survey createdSurvey = surveyDao.create(connection, survey);
-
-                // Fin transaccion
                 connection.commit();
-
                 return createdSurvey;
 
             } catch (SQLException e) {
                 connection.rollback();
                 throw new RuntimeException(e);
-            } catch (Exception e) {
+            } catch (RuntimeException | Error e) {
                 connection.rollback();
                 throw e;
             }
@@ -96,7 +85,12 @@ public class SurveyServiceImpl implements SurveyService {
 
     @Override
     public Survey findSurvey(Long surveyId) throws InstanceNotFoundException {
-        throw new UnsupportedOperationException("Not implemented yet");
+        // [FUNC-3] Implementación de buscar encuesta por ID
+        try (Connection connection = dataSource.getConnection()) {
+            return surveyDao.find(connection, surveyId);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

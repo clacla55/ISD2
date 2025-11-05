@@ -49,19 +49,51 @@ public class Jdbc3SqlSurveyDao extends AbstractSqlSurveyDao {
 
     @Override
     public void update(Connection connection, Survey survey) throws InstanceNotFoundException {
-        // No es necesario para FUNC-1
+        // No es necesario para FUNC-1 ni FUNC-3
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public Survey find(Connection connection, Long surveyId) throws InstanceNotFoundException {
-        // No es necesario para FUNC-1
-        throw new UnsupportedOperationException("Not implemented yet");
+
+        // [FUNC-3] Consulta para recuperar una encuesta por su ID
+        String queryString = "SELECT question, creationDate, endDate, canceled, "
+                + "positiveResponses, negativeResponses FROM Survey WHERE surveyId = ?";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(queryString)) {
+
+            preparedStatement.setLong(1, surveyId);
+
+            // Ejecutar la consulta
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (!resultSet.next()) {
+                // Si no se encuentra, lanzar excepción
+                throw new InstanceNotFoundException(surveyId, Survey.class.getName());
+            }
+
+            // Recuperar datos del ResultSet
+            String question = resultSet.getString(1);
+            Timestamp creationDateAsTimestamp = resultSet.getTimestamp(2);
+            LocalDateTime creationDate = creationDateAsTimestamp.toLocalDateTime();
+            Timestamp endDateAsTimestamp = resultSet.getTimestamp(3);
+            LocalDateTime endDate = endDateAsTimestamp.toLocalDateTime();
+            boolean canceled = resultSet.getBoolean(4);
+            long positiveResponses = resultSet.getLong(5);
+            long negativeResponses = resultSet.getLong(6);
+
+            // Devolver el objeto Survey reconstruido
+            return new Survey(surveyId, question, creationDate, endDate, canceled,
+                    positiveResponses, negativeResponses);
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public List<Survey> findByKeyword(Connection connection, String keyword, boolean onlyFuture) {
-        // No es necesario para FUNC-1
+        // No es necesario para FUNC-1 ni FUNC-3
         throw new UnsupportedOperationException("Not implemented yet");
     }
 

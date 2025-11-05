@@ -17,6 +17,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,100 +29,105 @@ public class AppServiceTest {
 
     @BeforeAll
     public static void init() {
-
-        // Creamos y registramos el DataSource para las pruebas
         dataSource = new SimpleDataSource();
         DataSourceLocator.addDataSource(ModelConstants.APP_DATA_SOURCE, dataSource);
-
-        // Obtenemos las instancias del servicio y del DAO
         surveyService = SurveyServiceImpl.getInstance();
         surveyDao = SqlSurveyDaoFactory.getDao();
     }
 
-    // Método auxiliar para limpiar la BD (necesario para las pruebas)
     private void removeSurvey(Long surveyId) {
         if (surveyId == null) {
             return;
         }
         try (Connection connection = dataSource.getConnection()) {
-            connection.setAutoCommit(true); // Usar autocommit para las operaciones de limpieza
+            connection.setAutoCommit(true);
             surveyDao.remove(connection, surveyId);
         } catch (InstanceNotFoundException e) {
-            // Ignoramos si ya ha sido eliminado
+            // Ignorar
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    /**
-     * [FUNC-1] Prueba de éxito.
-     * Verifica que la encuesta se haya creado correctamente en la base de datos,
-     * que todos los campos estén inicializados y que se devuelva un ID válido.
-     */
     @Test
     public void testCreateSurvey() throws InputValidationException {
-
         String question = "¿Te gusta la práctica de ISD?";
-        LocalDateTime endDate = LocalDateTime.now().plusDays(7);
+        LocalDateTime endDate = LocalDateTime.now().plusDays(7).truncatedTo(ChronoUnit.SECONDS);
         Survey createdSurvey = null;
-
         try {
-            // 1. Crear la encuesta
             createdSurvey = surveyService.createSurvey(question, endDate);
-
-            // 2. Verificaciones sobre el objeto devuelto
-            assertNotNull(createdSurvey.getSurveyId(), "SurveyId no debe ser nulo");
+            assertNotNull(createdSurvey.getSurveyId());
             assertEquals(question, createdSurvey.getQuestion());
             assertEquals(endDate, createdSurvey.getEndDate());
-            assertNotNull(createdSurvey.getCreationDate(), "CreationDate no debe ser nula");
-            assertFalse(createdSurvey.isCanceled(), "No debe estar cancelada");
-            assertEquals(0, createdSurvey.getPositiveResponses(), "Contador positivo debe ser 0");
-            assertEquals(0, createdSurvey.getNegativeResponses(), "Contador negativo debe ser 0");
-
-            // 3. Verificaciones en la BD (opcional, pero buena práctica)
-            // Si hubiéramos implementado surveyDao.find(), podríamos usarlo aquí.
-            // Por ahora, confiamos en que si createSurvey no ha lanzado excepciones
-            // y ha devuelto un ID, la inserción ha ido bien.
-
+            assertNotNull(createdSurvey.getCreationDate());
+            assertFalse(createdSurvey.isCanceled());
+            assertEquals(0, createdSurvey.getPositiveResponses());
+            assertEquals(0, createdSurvey.getNegativeResponses());
         } finally {
-            // 4. Limpieza
             if (createdSurvey != null) {
                 removeSurvey(createdSurvey.getSurveyId());
             }
         }
     }
 
-    /**
-     * [FUNC-1] Prueba para el caso de error: pregunta nula.
-     * Verifica que se lance InputValidationException.
-     */
     @Test
     public void testCreateSurveyNullQuestion() {
-
         LocalDateTime endDate = LocalDateTime.now().plusDays(7);
-
         assertThrows(InputValidationException.class, () -> {
             surveyService.createSurvey(null, endDate);
-        }, "No se pueden crear encuestas con pregunta nula");
-
+        });
         assertThrows(InputValidationException.class, () -> {
-            surveyService.createSurvey("   ", endDate); // También pregunta vacía
-        }, "No se pueden crear encuestas con pregunta vacía");
+            surveyService.createSurvey("", endDate);
+        });
+    }
+
+    @Test
+    public void testCreateSurveyPastEndDate() {
+        String question = "Pregunta válida";
+        LocalDateTime pastEndDate = LocalDateTime.now().minusDays(1);
+        assertThrows(InputValidationException.class, () -> {
+            surveyService.createSurvey(question, pastEndDate);
+        });
+    }
+
+    // --- NUEVOS TESTS PARA FUNC-3 ---
+
+    /**
+     * [FUNC-3] Prueba de éxito para findSurvey.
+     */
+    @Test
+    public void testFindSurvey() throws InputValidationException, InstanceNotFoundException {
+        String question = "Encuesta para buscar";
+        // Truncamos a segundos para evitar problemas de precisión con la BD
+        LocalDateTime endDate = LocalDateTime.now().plusDays(10).truncatedTo(ChronoUnit.SECONDS);
+        Survey createdSurvey = surveyService.createSurvey(question, endDate);
+
+        try {
+            // [FUNC-3] Buscar la encuesta recién creada
+            Survey foundSurvey = surveyService.findSurvey(createdSurvey.getSurveyId());
+
+            // Verificar que los datos son correctos
+            assertEquals(createdSurvey, foundSurvey);
+            assertEquals(createdSurvey.getSurveyId(), foundSurvey.getSurveyId());
+            assertEquals(createdSurvey.getQuestion(), foundSurvey.getQuestion());
+            assertEquals(createdSurvey.getCreationDate(), foundSurvey.getCreationDate());
+            assertEquals(createdSurvey.getEndDate(), foundSurvey.getEndDate());
+            assertEquals(createdSurvey.isCanceled(), foundSurvey.isCanceled());
+            assertEquals(createdSurvey.getPositiveResponses(), foundSurvey.getPositiveResponses());
+            assertEquals(createdSurvey.getNegativeResponses(), foundSurvey.getNegativeResponses());
+
+        } finally {
+            removeSurvey(createdSurvey.getSurveyId());
+        }
     }
 
     /**
-     * [FUNC-1] Prueba para el caso de error: fecha de finalización pasada.
-     * Verifica que se lance InputValidationException.
+     * [FUNC-3] Prueba de error para findSurvey (ID inexistente).
      */
     @Test
-    public void testCreateSurveyPastEndDate() {
-
-        String question = "Pregunta válida";
-        LocalDateTime pastEndDate = LocalDateTime.now().minusDays(1);
-
-        assertThrows(InputValidationException.class, () -> {
-            surveyService.createSurvey(question, pastEndDate);
-        }, "La fecha de fin debe ser futura");
+    public void testFindNonExistentSurvey() {
+        assertThrows(InstanceNotFoundException.class, () -> {
+            surveyService.findSurvey(-1L);
+        });
     }
-
 }

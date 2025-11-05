@@ -1,7 +1,5 @@
-DROP TABLE IF EXISTS surveyresponse; -- Vecchio nome (dall'errore)
-DROP TABLE IF EXISTS Response;       -- Nuovo nome (da Response.java)
-DROP TABLE IF EXISTS survey;         -- Vecchio nome (dall'errore)
-DROP TABLE IF EXISTS Survey;       -- Nuovo nome (da Survey.java)
+DROP TABLE IF EXISTS Response;
+DROP TABLE IF EXISTS Survey;
 
 
 
