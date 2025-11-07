@@ -50,14 +50,40 @@ public class Jdbc3SqlSurveyDao extends AbstractSqlSurveyDao {
 
     @Override
     public void update(Connection connection, Survey survey) throws InstanceNotFoundException {
-        // No es necesario para FUNC-1, FUNC-2 ni FUNC-3
-        throw new UnsupportedOperationException("Not implemented yet");
+
+        // [FUNC-4] Actualizamos los contadores y otros campos posibles
+        String queryString = "UPDATE Survey"
+                + " SET question = ?, creationDate = ?, endDate = ?, "
+                + " canceled = ?, positiveResponses = ?, negativeResponses = ?"
+                + " WHERE surveyId = ?";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(queryString)) {
+
+            int i = 1;
+            preparedStatement.setString(i++, survey.getQuestion());
+            preparedStatement.setTimestamp(i++, Timestamp.valueOf(survey.getCreationDate()));
+            preparedStatement.setTimestamp(i++, Timestamp.valueOf(survey.getEndDate()));
+            preparedStatement.setBoolean(i++, survey.isCanceled());
+            preparedStatement.setLong(i++, survey.getPositiveResponses());
+            preparedStatement.setLong(i++, survey.getNegativeResponses());
+            preparedStatement.setLong(i++, survey.getSurveyId());
+
+            int updatedRows = preparedStatement.executeUpdate();
+
+            if (updatedRows == 0) {
+                throw new InstanceNotFoundException(survey.getSurveyId(),
+                        Survey.class.getName());
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Survey find(Connection connection, Long surveyId) throws InstanceNotFoundException {
 
-        String queryString = "SELECT question, creationDate, endDate, canceled, "
+        String queryString = "SELECT surveyId, question, creationDate, endDate, canceled, "
                 + "positiveResponses, negativeResponses FROM Survey WHERE surveyId = ?";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(queryString)) {
@@ -72,19 +98,8 @@ public class Jdbc3SqlSurveyDao extends AbstractSqlSurveyDao {
                 throw new InstanceNotFoundException(surveyId, Survey.class.getName());
             }
 
-            // Recuperar datos del ResultSet
-            String question = resultSet.getString(1);
-            Timestamp creationDateAsTimestamp = resultSet.getTimestamp(2);
-            LocalDateTime creationDate = creationDateAsTimestamp.toLocalDateTime();
-            Timestamp endDateAsTimestamp = resultSet.getTimestamp(3);
-            LocalDateTime endDate = endDateAsTimestamp.toLocalDateTime();
-            boolean canceled = resultSet.getBoolean(4);
-            long positiveResponses = resultSet.getLong(5);
-            long negativeResponses = resultSet.getLong(6);
-
-            // Devolver el objeto Survey reconstruido
-            return new Survey(surveyId, question, creationDate, endDate, canceled,
-                    positiveResponses, negativeResponses);
+            // Usamos el método auxiliar de la clase abstracta
+            return getSurveyFromResultSet(resultSet);
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -129,18 +144,8 @@ public class Jdbc3SqlSurveyDao extends AbstractSqlSurveyDao {
             List<Survey> surveys = new ArrayList<>();
 
             while (resultSet.next()) {
-                Long surveyId = resultSet.getLong(1);
-                String question = resultSet.getString(2);
-                Timestamp creationDateAsTimestamp = resultSet.getTimestamp(3);
-                LocalDateTime creationDate = creationDateAsTimestamp.toLocalDateTime();
-                Timestamp endDateAsTimestamp = resultSet.getTimestamp(4);
-                LocalDateTime endDate = endDateAsTimestamp.toLocalDateTime();
-                boolean canceled = resultSet.getBoolean(5);
-                long positiveResponses = resultSet.getLong(6);
-                long negativeResponses = resultSet.getLong(7);
-
-                surveys.add(new Survey(surveyId, question, creationDate, endDate, canceled,
-                        positiveResponses, negativeResponses));
+                // Usamos el método auxiliar de la clase abstracta
+                surveys.add(getSurveyFromResultSet(resultSet));
             }
 
             return surveys;

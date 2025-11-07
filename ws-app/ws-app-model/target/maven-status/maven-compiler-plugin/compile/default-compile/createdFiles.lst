@@ -1,4 +1,6 @@
 es\udc\ws\app\model\surveyservice\SurveyService.class
+es\udc\ws\app\model\response\Jdbc3SqlResponseDao.class
+es\udc\ws\app\model\response\AbstractSqlResponseDao.class
 es\udc\ws\app\model\survey\AbstractSqlSurveyDao.class
 es\udc\ws\app\model\surveyservice\exceptions\SurveyFinishedException.class
 es\udc\ws\app\model\response\Response.class
@@ -7,6 +9,7 @@ es\udc\ws\app\model\survey\SqlSurveyDaoFactory.class
 es\udc\ws\app\model\surveyservice\exceptions\InputValidationException.class
 es\udc\ws\app\model\surveyservice\exceptions\SurveyAlreadyCanceledException.class
 es\udc\ws\app\model\util\ModelConstants.class
+es\udc\ws\app\model\response\SqlResponseDaoFactory.class
 es\udc\ws\app\model\surveyservice\exceptions\InstanceNotFoundException.class
 es\udc\ws\app\model\surveyservice\exceptions\SurveyCanceledException.class
 es\udc\ws\app\model\response\SqlResponseDao.class
