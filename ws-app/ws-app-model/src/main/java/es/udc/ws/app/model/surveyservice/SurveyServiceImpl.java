@@ -198,12 +198,50 @@ public class SurveyServiceImpl implements SurveyService {
     public Survey cancelSurvey(Long surveyId)
             throws InstanceNotFoundException, SurveyFinishedException,
             SurveyAlreadyCanceledException {
-        throw new UnsupportedOperationException("Not implemented yet");
+
+        try (Connection connection = dataSource.getConnection()) {
+            try {
+                connection.setAutoCommit(false);
+
+                // 1. Buscar la encuesta. Lanza InstanceNotFoundException si no existe
+                Survey survey = surveyDao.find(connection, surveyId);
+
+                // 2. [FUNC-5] Verificar si ha finalizado
+                if (survey.getEndDate().isBefore(LocalDateTime.now())) {
+                    throw new SurveyFinishedException("Cannot cancel a finished survey (ID: " + surveyId + ")");
+                }
+
+                // 3. [FUNC-5] Verificar si ya estaba cancelada
+                if (survey.isCanceled()) {
+                    throw new SurveyAlreadyCanceledException("Survey is already canceled (ID: " + surveyId + ")");
+                }
+
+                // 4. Cancelar la encuesta
+                survey.setCanceled(true);
+                surveyDao.update(connection, survey);
+
+                connection.commit();
+                return survey;
+
+            } catch (InstanceNotFoundException | SurveyFinishedException | SurveyAlreadyCanceledException e) {
+                connection.commit(); // Liberar bloqueos de lectura
+                throw e;
+            } catch (SQLException e) {
+                connection.rollback();
+                throw new RuntimeException(e);
+            } catch (RuntimeException | Error e) {
+                connection.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public List<Response> getResponses(Long surveyId, boolean onlyPositive)
             throws InstanceNotFoundException {
+        // [FUNC-6] Pendiente de implementar
         throw new UnsupportedOperationException("Not implemented yet");
     }
 }

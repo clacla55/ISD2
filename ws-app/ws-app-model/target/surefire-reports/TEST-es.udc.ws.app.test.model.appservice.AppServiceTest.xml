@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.923" tests="12" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.887" tests="16" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -64,16 +64,20 @@
     <property name="library.jansi.path" value="C:\software\apache-maven-3.9.11\lib\jansi-native"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testCreateSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.41"/>
-  <testcase name="testFindSurveysOnlyFuture" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.108"/>
-  <testcase name="testRespondToSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.105"/>
-  <testcase name="testFindSurveysByKeyword" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.101"/>
-  <testcase name="testRespondToCanceledSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.04"/>
-  <testcase name="testFindSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.027"/>
-  <testcase name="testCreateSurveyPastEndDate" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.008"/>
-  <testcase name="testRespondWithInvalidEmail" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.018"/>
-  <testcase name="testRespondToNonExistentSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.004"/>
-  <testcase name="testFindNonExistentSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.012"/>
-  <testcase name="testRespondToFinishedSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.021"/>
-  <testcase name="testCreateSurveyNullQuestion" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.002"/>
+  <testcase name="testCreateSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.357"/>
+  <testcase name="testFindSurveysOnlyFuture" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.061"/>
+  <testcase name="testRespondToSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.08"/>
+  <testcase name="testFindSurveysByKeyword" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.082"/>
+  <testcase name="testRespondToCanceledSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.032"/>
+  <testcase name="testCancelNonExistentSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.004"/>
+  <testcase name="testCancelSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.027"/>
+  <testcase name="testFindSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.032"/>
+  <testcase name="testCancelFinishedSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.031"/>
+  <testcase name="testCreateSurveyPastEndDate" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.0"/>
+  <testcase name="testCancelAlreadyCanceledSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.043"/>
+  <testcase name="testRespondWithInvalidEmail" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.021"/>
+  <testcase name="testRespondToNonExistentSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.005"/>
+  <testcase name="testFindNonExistentSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.01"/>
+  <testcase name="testRespondToFinishedSurvey" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.033"/>
+  <testcase name="testCreateSurveyNullQuestion" classname="es.udc.ws.app.test.model.appservice.AppServiceTest" time="0.0"/>
 </testsuite>

@@ -3,6 +3,7 @@ package es.udc.ws.app.test.model.appservice;
 import es.udc.ws.app.model.response.Response;
 import es.udc.ws.app.model.response.SqlResponseDao;
 import es.udc.ws.app.model.response.SqlResponseDaoFactory;
+import es.udc.ws.app.model.surveyservice.exceptions.SurveyAlreadyCanceledException;
 import es.udc.ws.app.model.surveyservice.exceptions.SurveyCanceledException;
 import es.udc.ws.app.model.surveyservice.exceptions.SurveyFinishedException;
 import es.udc.ws.app.model.util.ModelConstants;
@@ -264,7 +265,7 @@ public class AppServiceTest {
         }
     }
 
-    // Método auxiliar para cancelar una encuesta directamente en BD
+    // Método auxiliar para cancelar una encuesta directamente en BD (usado en test FUNC-4)
     private void cancelSurveyRaw(Long surveyId) {
         try (Connection conn = dataSource.getConnection()) {
             String sql = "UPDATE Survey SET canceled = 1 WHERE surveyId = ?";
@@ -304,6 +305,65 @@ public class AppServiceTest {
             assertThrows(InputValidationException.class, () -> {
                 surveyService.respondToSurvey(survey.getSurveyId(), "invalid-email-format", true);
             });
+        } finally {
+            removeSurvey(survey.getSurveyId());
+        }
+    }
+
+    // --- NUEVOS TESTS PARA FUNC-5 (Cancelar encuesta) ---
+
+    @Test
+    public void testCancelSurvey() throws InputValidationException, InstanceNotFoundException, SurveyFinishedException, SurveyAlreadyCanceledException {
+        Survey survey = surveyService.createSurvey("Encuesta para cancelar", LocalDateTime.now().plusDays(2));
+        try {
+            // Estado inicial
+            assertFalse(survey.isCanceled());
+
+            // Cancelamos
+            Survey canceledSurvey = surveyService.cancelSurvey(survey.getSurveyId());
+            assertTrue(canceledSurvey.isCanceled());
+            assertEquals(survey.getSurveyId(), canceledSurvey.getSurveyId());
+
+            // Verificamos en BD
+            Survey foundSurvey = surveyService.findSurvey(survey.getSurveyId());
+            assertTrue(foundSurvey.isCanceled());
+
+        } finally {
+            removeSurvey(survey.getSurveyId());
+        }
+    }
+
+    @Test
+    public void testCancelNonExistentSurvey() {
+        assertThrows(InstanceNotFoundException.class, () -> {
+            surveyService.cancelSurvey(-1L);
+        });
+    }
+
+    @Test
+    public void testCancelFinishedSurvey() {
+        Survey pastSurvey = createPastSurveyRaw("Encuesta finalizada para cancelar");
+        try {
+            assertThrows(SurveyFinishedException.class, () -> {
+                surveyService.cancelSurvey(pastSurvey.getSurveyId());
+            });
+        } finally {
+            if (pastSurvey != null) removeSurvey(pastSurvey.getSurveyId());
+        }
+    }
+
+    @Test
+    public void testCancelAlreadyCanceledSurvey() throws InputValidationException, SurveyFinishedException, SurveyAlreadyCanceledException, InstanceNotFoundException {
+        Survey survey = surveyService.createSurvey("Encuesta para doble cancel", LocalDateTime.now().plusDays(1));
+        try {
+            // Primera cancelación (exitosa)
+            surveyService.cancelSurvey(survey.getSurveyId());
+
+            // Segunda cancelación (debe fallar)
+            assertThrows(SurveyAlreadyCanceledException.class, () -> {
+                surveyService.cancelSurvey(survey.getSurveyId());
+            });
+
         } finally {
             removeSurvey(survey.getSurveyId());
         }
