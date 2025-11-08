@@ -57,7 +57,42 @@ public class AppServiceTest {
         }
     }
 
-    // --- TEST EXISTENTES ---
+    // Método auxiliar para crear una encuesta en el pasado directamente en BD
+    private Survey createPastSurveyRaw(String question) {
+        try (Connection conn = dataSource.getConnection()) {
+            String sql = "INSERT INTO Survey (question, creationDate, endDate, canceled, positiveResponses, negativeResponses) VALUES (?, ?, ?, ?, 0, 0)";
+            try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                Timestamp pastDate = Timestamp.valueOf(LocalDateTime.now().minusDays(10));
+                ps.setString(1, question);
+                ps.setTimestamp(2, pastDate);
+                ps.setTimestamp(3, pastDate);
+                ps.setBoolean(4, false);
+                ps.executeUpdate();
+                ResultSet rs = ps.getGeneratedKeys();
+                if (rs.next()) {
+                    return new Survey(rs.getLong(1), question, pastDate.toLocalDateTime(), pastDate.toLocalDateTime(), false, 0, 0);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    // Método auxiliar para cancelar una encuesta directamente en BD
+    private void cancelSurveyRaw(Long surveyId) {
+        try (Connection conn = dataSource.getConnection()) {
+            String sql = "UPDATE Survey SET canceled = 1 WHERE surveyId = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setLong(1, surveyId);
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // --- TESTS FUNC-1 (Crear encuesta) ---
 
     @Test
     public void testCreateSurvey() throws InputValidationException {
@@ -100,6 +135,8 @@ public class AppServiceTest {
         });
     }
 
+    // --- TESTS FUNC-3 (Buscar encuesta por ID) ---
+
     @Test
     public void testFindSurvey() throws InputValidationException, InstanceNotFoundException {
         String question = "Encuesta para buscar por ID";
@@ -129,6 +166,8 @@ public class AppServiceTest {
             surveyService.findSurvey(-1L);
         });
     }
+
+    // --- TESTS FUNC-2 (Buscar encuestas por palabra clave) ---
 
     @Test
     public void testFindSurveysByKeyword() throws InputValidationException {
@@ -160,27 +199,6 @@ public class AppServiceTest {
         }
     }
 
-    private Survey createPastSurveyRaw(String question) {
-        try (Connection conn = dataSource.getConnection()) {
-            String sql = "INSERT INTO Survey (question, creationDate, endDate, canceled, positiveResponses, negativeResponses) VALUES (?, ?, ?, ?, 0, 0)";
-            try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-                Timestamp pastDate = Timestamp.valueOf(LocalDateTime.now().minusDays(10));
-                ps.setString(1, question);
-                ps.setTimestamp(2, pastDate);
-                ps.setTimestamp(3, pastDate);
-                ps.setBoolean(4, false);
-                ps.executeUpdate();
-                ResultSet rs = ps.getGeneratedKeys();
-                if (rs.next()) {
-                    return new Survey(rs.getLong(1), question, pastDate.toLocalDateTime(), pastDate.toLocalDateTime(), false, 0, 0);
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-        return null;
-    }
-
     @Test
     public void testFindSurveysOnlyFuture() throws InputValidationException {
         Survey futureSurvey = surveyService.createSurvey("Encuesta futura", LocalDateTime.now().plusDays(10));
@@ -203,7 +221,7 @@ public class AppServiceTest {
         }
     }
 
-    // --- NUEVOS TESTS PARA FUNC-4 (Responder encuesta) ---
+    // --- TESTS FUNC-4 (Responder encuesta) ---
 
     @Test
     public void testRespondToSurvey() throws InputValidationException, InstanceNotFoundException, SurveyFinishedException, SurveyCanceledException {
@@ -265,19 +283,6 @@ public class AppServiceTest {
         }
     }
 
-    // Método auxiliar para cancelar una encuesta directamente en BD (usado en test FUNC-4)
-    private void cancelSurveyRaw(Long surveyId) {
-        try (Connection conn = dataSource.getConnection()) {
-            String sql = "UPDATE Survey SET canceled = 1 WHERE surveyId = ?";
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setLong(1, surveyId);
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @Test
     public void testRespondToCanceledSurvey() throws InputValidationException {
         Survey survey = surveyService.createSurvey("Encuesta a cancelar", LocalDateTime.now().plusDays(1));
@@ -310,7 +315,7 @@ public class AppServiceTest {
         }
     }
 
-    // --- NUEVOS TESTS PARA FUNC-5 (Cancelar encuesta) ---
+    // --- TESTS FUNC-5 (Cancelar encuesta) ---
 
     @Test
     public void testCancelSurvey() throws InputValidationException, InstanceNotFoundException, SurveyFinishedException, SurveyAlreadyCanceledException {
@@ -364,6 +369,55 @@ public class AppServiceTest {
                 surveyService.cancelSurvey(survey.getSurveyId());
             });
 
+        } finally {
+            removeSurvey(survey.getSurveyId());
+        }
+    }
+
+    // --- NUEVOS TESTS PARA FUNC-6 (Obtener respuestas) ---
+
+    @Test
+    public void testGetResponses() throws InputValidationException, InstanceNotFoundException, SurveyFinishedException, SurveyCanceledException {
+        Survey survey = surveyService.createSurvey("Encuesta para listar respuestas", LocalDateTime.now().plusDays(5));
+        try {
+            // Crear algunas respuestas
+            Response r1 = surveyService.respondToSurvey(survey.getSurveyId(), "pos1@techfic.com", true);
+            Response r2 = surveyService.respondToSurvey(survey.getSurveyId(), "neg1@techfic.com", false);
+            Response r3 = surveyService.respondToSurvey(survey.getSurveyId(), "pos2@techfic.com", true);
+
+            // 1. Obtener TODAS las respuestas
+            List<Response> allResponses = surveyService.getResponses(survey.getSurveyId(), false);
+            assertEquals(3, allResponses.size());
+            // Verificar que contiene las respuestas esperadas
+            assertTrue(allResponses.contains(r1));
+            assertTrue(allResponses.contains(r2));
+            assertTrue(allResponses.contains(r3));
+
+            // 2. Obtener SÓLO respuestas POSITIVAS
+            List<Response> posResponses = surveyService.getResponses(survey.getSurveyId(), true);
+            assertEquals(2, posResponses.size());
+            assertTrue(posResponses.contains(r1));
+            assertTrue(posResponses.contains(r3));
+            assertFalse(posResponses.contains(r2));
+
+        } finally {
+            removeSurvey(survey.getSurveyId());
+        }
+    }
+
+    @Test
+    public void testGetResponsesNonExistentSurvey() {
+        assertThrows(InstanceNotFoundException.class, () -> {
+            surveyService.getResponses(-1L, false);
+        });
+    }
+
+    @Test
+    public void testGetResponsesEmpty() throws InputValidationException, InstanceNotFoundException {
+        Survey survey = surveyService.createSurvey("Encuesta sin respuestas", LocalDateTime.now().plusDays(5));
+        try {
+            List<Response> responses = surveyService.getResponses(survey.getSurveyId(), false);
+            assertTrue(responses.isEmpty());
         } finally {
             removeSurvey(survey.getSurveyId());
         }

@@ -3,6 +3,7 @@ package es.udc.ws.app.model.response;
 import es.udc.ws.util.exceptions.InstanceNotFoundException;
 
 import java.sql.*;
+import java.util.ArrayList; // [FUNC-6] Necesario añadir este import
 import java.util.List;
 import java.util.Optional;
 
@@ -115,7 +116,41 @@ public class Jdbc3SqlResponseDao extends AbstractSqlResponseDao {
 
     @Override
     public List<Response> findBySurveyId(Connection connection, Long surveyId, boolean onlyPositive) {
-        throw new UnsupportedOperationException("Not implemented yet (FUNC-6)");
+
+        // [FUNC-6] Implementación de la búsqueda de respuestas
+        String queryString = "SELECT responseId, surveyId, employeeEmail, response, responseDate "
+                + "FROM Response WHERE surveyId = ?";
+
+        // Si se solicitan sólo positivas, añadimos la condición
+        if (onlyPositive) {
+            queryString += " AND response = ?";
+        }
+
+        // Ordenamos por fecha de respuesta descendente (las más recientes primero)
+        queryString += " ORDER BY responseDate DESC";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(queryString)) {
+
+            int i = 1;
+            preparedStatement.setLong(i++, surveyId);
+
+            if (onlyPositive) {
+                // true representa una respuesta positiva en la BD
+                preparedStatement.setBoolean(i++, true);
+            }
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            List<Response> responses = new ArrayList<>();
+
+            while (resultSet.next()) {
+                responses.add(getResponseFromResultSet(resultSet));
+            }
+
+            return responses;
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

@@ -241,7 +241,18 @@ public class SurveyServiceImpl implements SurveyService {
     @Override
     public List<Response> getResponses(Long surveyId, boolean onlyPositive)
             throws InstanceNotFoundException {
-        // [FUNC-6] Pendiente de implementar
-        throw new UnsupportedOperationException("Not implemented yet");
+
+        try (Connection connection = dataSource.getConnection()) {
+
+            // [FUNC-6] Primero verificamos que la encuesta existe
+            // Si no existe, el DAO lanzará InstanceNotFoundException
+            surveyDao.find(connection, surveyId);
+
+            // Recuperamos las respuestas
+            return responseDao.findBySurveyId(connection, surveyId, onlyPositive);
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
