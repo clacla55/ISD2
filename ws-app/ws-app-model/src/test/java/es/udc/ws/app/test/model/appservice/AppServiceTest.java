@@ -57,6 +57,20 @@ public class AppServiceTest {
         }
     }
 
+    private void removeResponse(Long responseId) {
+        if (responseId == null) {
+            return;
+        }
+        try (Connection connection = dataSource.getConnection()) {
+            connection.setAutoCommit(true);
+            responseDao.remove(connection, responseId);
+        } catch (InstanceNotFoundException e) {
+            // Ignorar si ya no existe
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     // Método auxiliar para crear una encuesta en el pasado directamente en BD
     private Survey createPastSurveyRaw(String question) {
         try (Connection conn = dataSource.getConnection()) {
@@ -226,9 +240,12 @@ public class AppServiceTest {
     @Test
     public void testRespondToSurvey() throws InputValidationException, InstanceNotFoundException, SurveyFinishedException, SurveyCanceledException {
         Survey survey = surveyService.createSurvey("¿Te gusta Java?", LocalDateTime.now().plusDays(1));
+        Response res1 = null;
+        Response res2 = null;
+
         try {
             // 1. Respuesta Positiva (creación)
-            Response res1 = surveyService.respondToSurvey(survey.getSurveyId(), "emp1@techfic.com", true);
+            res1 = surveyService.respondToSurvey(survey.getSurveyId(), "emp1@techfic.com", true);
 
             assertEquals(survey.getSurveyId(), res1.getSurveyId());
             assertEquals("emp1@techfic.com", res1.getEmployeeEmail());
@@ -241,7 +258,9 @@ public class AppServiceTest {
             assertEquals(0, sAfterRes1.getNegativeResponses());
 
             // 2. Respuesta Negativa de otro empleado (creación)
-            surveyService.respondToSurvey(survey.getSurveyId(), "emp2@techfic.com", false);
+            // CORRECCIÓN PRIMERA ITERACION: Capturamos la respuesta para poder eliminarla en finally.
+            res2 = surveyService.respondToSurvey(survey.getSurveyId(), "emp2@techfic.com", false);
+
             Survey sAfterRes2 = surveyService.findSurvey(survey.getSurveyId());
             assertEquals(1, sAfterRes2.getPositiveResponses());
             assertEquals(1, sAfterRes2.getNegativeResponses());
@@ -260,6 +279,13 @@ public class AppServiceTest {
             assertEquals(2, sAfterUpdate.getNegativeResponses());
 
         } finally {
+            // CORRECCIÓN PRIMERA ITERACION: Eliminación explícita de las respuestas antes de eliminar la encuesta.
+            if (res2 != null) {
+                removeResponse(res2.getResponseId());
+            }
+            if (res1 != null) {
+                removeResponse(res1.getResponseId());
+            }
             removeSurvey(survey.getSurveyId());
         }
     }

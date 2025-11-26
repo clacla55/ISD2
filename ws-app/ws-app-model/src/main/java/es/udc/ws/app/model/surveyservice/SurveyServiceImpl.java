@@ -119,6 +119,8 @@ public class SurveyServiceImpl implements SurveyService {
         try (Connection connection = dataSource.getConnection()) {
 
             try {
+                // CORRECCIÓN PRIMERA ITERACION: Configuración del nivel de aislamiento
+                connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
                 connection.setAutoCommit(false);
 
                 // 1. Buscar la encuesta. Lanza InstanceNotFoundException si no existe
